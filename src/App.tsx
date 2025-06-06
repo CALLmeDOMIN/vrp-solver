@@ -1,10 +1,13 @@
-import { Button } from "@/components/ui/button";
+import MultiStepForm from "./components/MultiStepForm/MultiStepForm";
+import { DataProvider } from "./context/DataContext";
 
 function App() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
-      <Button>Click me</Button>
-    </div>
+    <DataProvider>
+      <div className="flex min-h-screen items-center justify-center">
+        <MultiStepForm />
+      </div>
+    </DataProvider>
   );
 }
 
