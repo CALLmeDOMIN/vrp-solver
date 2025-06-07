@@ -36,19 +36,21 @@ export default function CapacitySupplyForm() {
         (acc, supplier) => {
           acc[supplier.id] = {
             supply: supplier.supply,
+            sellingPrice: supplier.sellingPrice,
           };
           return acc;
         },
-        {} as Record<string, { supply: number }>,
+        {} as Record<string, { supply: number; sellingPrice: number }>,
       ),
       recipients: recipients.reduce(
         (acc, recipient) => {
           acc[recipient.id] = {
             demand: recipient.demand,
+            purchasePrice: recipient.purchasePrice,
           };
           return acc;
         },
-        {} as Record<string, { demand: number }>,
+        {} as Record<string, { demand: number; purchasePrice: number }>,
       ),
     },
   });
@@ -72,6 +74,13 @@ export default function CapacitySupplyForm() {
         <div>
           <h2 className="mb-4 text-xl font-semibold">Suppliers' Supply</h2>
           <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="w-5" />
+                <div className="w-1/2 text-sm font-medium">Supply</div>
+                <div className="w-1/2 text-sm font-medium">Selling Price</div>
+              </div>
+            </div>
             {suppliers.map((supplier) => (
               <div key={supplier.id} className="flex items-center gap-4">
                 <div className="text-sm font-medium">{supplier.name}</div>
@@ -83,10 +92,29 @@ export default function CapacitySupplyForm() {
                       <FormControl>
                         <Input
                           type="number"
+                          placeholder="0"
+                          min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`suppliers.${supplier.id}.sellingPrice`}
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          min="0"
+                          {...field}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />
@@ -101,6 +129,13 @@ export default function CapacitySupplyForm() {
         <div>
           <h2 className="mb-4 text-xl font-semibold">Recipients' Demand</h2>
           <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="w-5" />
+                <div className="w-1/2 text-sm font-medium">Demand</div>
+                <div className="w-1/2 text-sm font-medium">Purchase Price</div>
+              </div>
+            </div>
             {recipients.map((recipient) => (
               <div key={recipient.id} className="flex items-center gap-4">
                 <div className="text-sm font-medium">{recipient.name}</div>
@@ -108,14 +143,33 @@ export default function CapacitySupplyForm() {
                   control={form.control}
                   name={`recipients.${recipient.id}.demand`}
                   render={({ field }) => (
-                    <FormItem className="flex-1">
+                    <FormItem>
                       <FormControl>
                         <Input
                           type="number"
+                          placeholder="0"
+                          min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`recipients.${recipient.id}.purchasePrice`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          {...field}
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage />

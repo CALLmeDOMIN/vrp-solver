@@ -21,14 +21,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import {
-  convertToCostMatrix,
   createCostsFormSchema,
   createDefaultCosts,
   type CostsFormData,
 } from "./CostsForm.utils";
 
 export default function CostsForm() {
-  const { suppliers, recipients, prevStep } = useDataContext();
+  const { suppliers, recipients, setCosts, prevStep, nextStep } =
+    useDataContext();
 
   const formSchema = useMemo(
     () => createCostsFormSchema(suppliers, recipients),
@@ -43,10 +43,17 @@ export default function CostsForm() {
   });
 
   const onSubmit = (values: CostsFormData) => {
-    console.log("Form submitted with values:", values);
+    const costsForContext: Record<string, Record<string, number>> = {};
 
-    const costMatrix = convertToCostMatrix(values, suppliers, recipients);
-    console.log("Cost matrix:", costMatrix);
+    Object.entries(values.costs).forEach(([recipientId, supplierCosts]) => {
+      costsForContext[recipientId] = {};
+      Object.entries(supplierCosts).forEach(([supplierId, cost]) => {
+        costsForContext[recipientId][supplierId] = cost;
+      });
+    });
+
+    setCosts(costsForContext);
+    nextStep();
   };
 
   return (

@@ -47,13 +47,3 @@ export const createDefaultCosts = (
     {} as Record<string, Record<string, number | undefined>>,
   );
 };
-
-export const convertToCostMatrix = (
-  formData: CostsFormData,
-  suppliers: Array<{ id: string; name: string; supply: number }>,
-  recipients: Array<{ id: string; name: string; demand: number }>,
-): number[][] => {
-  return recipients.map((recipient) =>
-    suppliers.map((supplier) => formData.costs[recipient.id][supplier.id]),
-  );
-};
