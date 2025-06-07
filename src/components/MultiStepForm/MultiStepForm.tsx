@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { useDataContext } from "@/context/DataContext";
 import CapacitySupplyForm from "../CapacitySupplyForm/CapacitySupplyForm";
+import CostsForm from "../CostsForm/CostsForm";
 
 export default function MultiStepForm() {
   const { step } = useDataContext();
@@ -27,7 +28,7 @@ export default function MultiStepForm() {
         ) : step === 2 ? (
           <CapacitySupplyForm />
         ) : (
-          step
+          <CostsForm />
         )}
       </CardContent>
     </Card>

@@ -6,6 +6,7 @@ type Data = {
   recipientAmount: number | undefined;
   suppliers: Array<{ id: string; name: string; supply: number }>;
   recipients: Array<{ id: string; name: string; demand: number }>;
+  costs: Record<string, Record<string, number>> | undefined;
 };
 
 type DataContextType = Data & {
@@ -25,6 +26,7 @@ type DataContextType = Data & {
   step: number;
   nextStep: () => void;
   prevStep: () => void;
+  setCosts: (costs: Record<string, Record<string, number>>) => void; // Add this
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -35,6 +37,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     recipientAmount: undefined,
     suppliers: [],
     recipients: [],
+    costs: undefined,
   });
 
   const setSupplierAndRecipientAmounts = useCallback(
@@ -82,12 +85,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const setCosts = useCallback(
+    (costs: Record<string, Record<string, number>>) => {
+      setData((prev) => ({ ...prev, costs }));
+    },
+    [],
+  );
+
   const resetData = useCallback(() => {
     setData({
       supplierAmount: undefined,
       recipientAmount: undefined,
       suppliers: [],
       recipients: [],
+      costs: undefined,
     });
   }, []);
 
@@ -107,6 +118,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     step,
     nextStep,
     prevStep,
+    setCosts,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
