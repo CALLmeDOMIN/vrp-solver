@@ -1,5 +1,14 @@
 import { useDataContext } from "@/context/DataContext";
+import { createProfitMatrix } from "@/lib/mediatorSolver";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 import {
   Table,
   TableBody,
@@ -10,7 +19,7 @@ import {
 } from "../ui/table";
 
 export default function SolutionDisplay() {
-  const { solveMediatorProblem, prevStep, resetData } = useDataContext();
+  const { solveMediatorProblem, prevStep, resetData, costs } = useDataContext();
 
   const result = solveMediatorProblem();
 
@@ -41,6 +50,31 @@ export default function SolutionDisplay() {
   );
   const fictionalRecipient = balancedRecipients.find((r) =>
     r.id.startsWith("fictional_"),
+  );
+
+  const extendedCosts: Record<string, Record<string, number>> = { ...costs };
+
+  balancedRecipients.forEach((recipient) => {
+    if (!extendedCosts[recipient.id]) {
+      extendedCosts[recipient.id] = {};
+      balancedSuppliers.forEach((supplier) => {
+        extendedCosts[recipient.id][supplier.id] = 0;
+      });
+    }
+  });
+
+  balancedSuppliers.forEach((supplier) => {
+    balancedRecipients.forEach((recipient) => {
+      if (!extendedCosts[recipient.id][supplier.id]) {
+        extendedCosts[recipient.id][supplier.id] = 0;
+      }
+    });
+  });
+
+  const profitMatrix = createProfitMatrix(
+    balancedSuppliers,
+    balancedRecipients,
+    extendedCosts,
   );
 
   return (
@@ -195,6 +229,89 @@ export default function SolutionDisplay() {
         <Button onClick={prevStep} variant="secondary">
           Back to Costs
         </Button>
+
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>View Profit Matrix</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Profit Matrix</DialogTitle>
+              <DialogDescription>
+                Profit per unit for each supplier-recipient combination
+                (Recipient Purchase Price - Transport Cost - Supplier Selling
+                Price)
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-96 overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Supplier/Recipient</TableHead>
+                    {balancedRecipients
+                      .filter(
+                        (recipient) => !recipient.id.startsWith("fictional_"),
+                      )
+                      .map((recipient) => (
+                        <TableHead key={recipient.id} className="text-center">
+                          {recipient.name}
+                        </TableHead>
+                      ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {balancedSuppliers
+                    .filter((supplier) => !supplier.id.startsWith("fictional_"))
+                    .map((supplier) => {
+                      const supplierIndex = balancedSuppliers.findIndex(
+                        (s) => s.id === supplier.id,
+                      );
+                      return (
+                        <TableRow key={supplier.id}>
+                          <TableCell className="font-medium">
+                            {supplier.name}
+                          </TableCell>
+                          {balancedRecipients
+                            .filter(
+                              (recipient) =>
+                                !recipient.id.startsWith("fictional_"),
+                            )
+                            .map((recipient) => {
+                              const recipientIndex =
+                                balancedRecipients.findIndex(
+                                  (r) => r.id === recipient.id,
+                                );
+                              return (
+                                <TableCell
+                                  key={recipient.id}
+                                  className="text-center"
+                                >
+                                  <span
+                                    className={
+                                      profitMatrix[supplierIndex][
+                                        recipientIndex
+                                      ] >= 0
+                                        ? "font-medium text-green-600"
+                                        : "font-medium text-red-600"
+                                    }
+                                  >
+                                    $
+                                    {profitMatrix[supplierIndex][
+                                      recipientIndex
+                                    ].toFixed(2)}
+                                  </span>
+                                </TableCell>
+                              );
+                            })}
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Button onClick={resetData} variant="outline">
           Start Over
         </Button>
