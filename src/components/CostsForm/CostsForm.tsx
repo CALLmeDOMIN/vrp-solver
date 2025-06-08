@@ -20,14 +20,10 @@ import { useDataContext } from "@/context/DataContext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
-import {
-  createCostsFormSchema,
-  createDefaultCosts,
-  type CostsFormData,
-} from "./CostsForm.utils";
+import { createCostsFormSchema, type CostsFormData } from "./CostsForm.utils";
 
 export default function CostsForm() {
-  const { suppliers, recipients, setCosts, prevStep, nextStep } =
+  const { suppliers, recipients, costs, setCosts, prevStep, nextStep } =
     useDataContext();
 
   const formSchema = useMemo(
@@ -38,7 +34,7 @@ export default function CostsForm() {
   const form = useForm<CostsFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      costs: createDefaultCosts(suppliers, recipients),
+      costs: costs || undefined,
     },
   });
 
@@ -61,24 +57,24 @@ export default function CostsForm() {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Table>
           <TableCaption>
-            Insert costs for each supplier-recipient pair
+            Transportation costs from suppliers to recipients
           </TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-right">{"</>"}</TableHead>
-              {suppliers.map((supplier) => (
-                <TableHead key={supplier.id} className="w-[100px] text-center">
-                  {supplier.name}
+              <TableHead className="text-right">From \ To</TableHead>
+              {recipients.map((recipient) => (
+                <TableHead key={recipient.id} className="w-[100px] text-center">
+                  {recipient.name}
                 </TableHead>
               ))}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {recipients.map((recipient) => (
-              <TableRow key={recipient.id}>
-                <TableCell className="font-medium">{recipient.name}</TableCell>
-                {suppliers.map((supplier) => (
-                  <TableCell key={supplier.id} className="text-right">
+            {suppliers.map((supplier) => (
+              <TableRow key={supplier.id}>
+                <TableCell className="font-medium">{supplier.name}</TableCell>
+                {recipients.map((recipient) => (
+                  <TableCell key={recipient.id} className="text-center">
                     <FormField
                       control={form.control}
                       name={`costs.${recipient.id}.${supplier.id}`}
@@ -105,19 +101,12 @@ export default function CostsForm() {
             ))}
           </TableBody>
         </Table>
-        <div>
-          <Button
-            type="button"
-            variant="secondary"
-            className="float-left"
-            onClick={prevStep}
-          >
+        <div className="mt-4 flex justify-between">
+          <Button type="button" variant="secondary" onClick={prevStep}>
             Back
           </Button>
 
-          <Button type="submit" className="float-right">
-            Submit
-          </Button>
+          <Button type="submit">Submit</Button>
         </div>
       </form>
     </Form>

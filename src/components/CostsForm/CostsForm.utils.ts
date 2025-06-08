@@ -10,7 +10,7 @@ export const createCostsFormSchema = (
         suppliers.reduce(
           (supplierAcc, supplier) => {
             supplierAcc[supplier.id] = z.coerce
-              .number()
+              .number({ invalid_type_error: "Please enter a valid cost" })
               .min(0, "Cost must be non-negative");
             return supplierAcc;
           },
@@ -28,22 +28,3 @@ export const createCostsFormSchema = (
 };
 
 export type CostsFormData = z.infer<ReturnType<typeof createCostsFormSchema>>;
-
-export const createDefaultCosts = (
-  suppliers: Array<{ id: string; name: string; supply: number }>,
-  recipients: Array<{ id: string; name: string; demand: number }>,
-) => {
-  return recipients.reduce(
-    (recipientAcc, recipient) => {
-      recipientAcc[recipient.id] = suppliers.reduce(
-        (supplierAcc, supplier) => {
-          supplierAcc[supplier.id] = undefined;
-          return supplierAcc;
-        },
-        {} as Record<string, number | undefined>,
-      );
-      return recipientAcc;
-    },
-    {} as Record<string, Record<string, number | undefined>>,
-  );
-};

@@ -1,4 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
+import {
+  balanceProblem,
+  calculateTotals,
+  createProfitMatrix,
+  solveVAM,
+  type SolverInput,
+} from "@/lib/mediatorSolver";
 import { createContext, useCallback, useContext, useState } from "react";
 
 type Data = {
@@ -42,6 +49,18 @@ type DataContextType = Data & {
     totalProfit: number;
     totalCost: number;
     totalIncome: number;
+    balancedSuppliers: Array<{
+      id: string;
+      name: string;
+      supply: number;
+      sellingPrice: number;
+    }>;
+    balancedRecipients: Array<{
+      id: string;
+      name: string;
+      demand: number;
+      purchasePrice: number;
+    }>;
   } | null;
 };
 
@@ -124,108 +143,35 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       data.suppliers.length === 0 ||
       data.recipients.length === 0
     ) {
-      console.log("Missing data:", {
-        costs: !!data.costs,
-        suppliers: data.suppliers.length,
-        recipients: data.recipients.length,
-      });
       return null;
     }
 
-    const m = data.suppliers.length;
-    const n = data.recipients.length;
+    const input: SolverInput = {
+      suppliers: data.suppliers,
+      recipients: data.recipients,
+      costs: data.costs,
+    };
 
-    const solution: number[][] = Array(m)
-      .fill(0)
-      .map(() => Array(n).fill(0));
+    const { suppliers, recipients, costs } = balanceProblem(input);
 
-    const supply = [...data.suppliers.map((s) => s.supply)];
-    const demand = [...data.recipients.map((r) => r.demand)];
+    const profitMatrix = createProfitMatrix(suppliers, recipients, costs);
 
-    console.log("Initial supply:", supply);
-    console.log("Initial demand:", demand);
-    console.log("Costs:", data.costs);
+    const solution = solveVAM(suppliers, recipients, profitMatrix);
 
-    const profitMatrix: number[][] = [];
-    for (let i = 0; i < m; i++) {
-      profitMatrix[i] = [];
-      for (let j = 0; j < n; j++) {
-        const transportCost =
-          data.costs[data.recipients[j].id][data.suppliers[i].id];
-        const sellingPrice = data.suppliers[i].sellingPrice;
-        const purchasePrice = data.recipients[j].purchasePrice;
-        const profit = sellingPrice - transportCost - purchasePrice;
-        profitMatrix[i][j] = profit;
-        console.log(
-          `Profit[${i}][${j}] = ${sellingPrice} - ${transportCost} - ${purchasePrice} = ${profit}`,
-        );
-      }
-    }
-
-    const allocations: Array<{ i: number; j: number; profit: number }> = [];
-    for (let i = 0; i < m; i++) {
-      for (let j = 0; j < n; j++) {
-        allocations.push({ i, j, profit: profitMatrix[i][j] });
-      }
-    }
-
-    allocations.sort((a, b) => b.profit - a.profit);
-    console.log("Sorted allocations:", allocations);
-
-    for (const allocation of allocations) {
-      const { i, j } = allocation;
-      const maxAllocation = Math.min(supply[i], demand[j]);
-
-      if (maxAllocation > 0) {
-        solution[i][j] = maxAllocation;
-        supply[i] -= maxAllocation;
-        demand[j] -= maxAllocation;
-        console.log(`Allocated ${maxAllocation} from S${i + 1} to R${j + 1}`);
-      }
-
-      const totalSupplyLeft = supply.reduce((sum, s) => sum + s, 0);
-      const totalDemandLeft = demand.reduce((sum, d) => sum + d, 0);
-      if (totalSupplyLeft === 0 || totalDemandLeft === 0) {
-        break;
-      }
-    }
-
-    console.log("Final solution matrix:", solution);
-
-    let totalCost = 0;
-    let totalIncome = 0;
-
-    for (let i = 0; i < m; i++) {
-      for (let j = 0; j < n; j++) {
-        if (solution[i][j] > 0) {
-          const quantity = solution[i][j];
-          const transportCost =
-            data.costs[data.recipients[j].id][data.suppliers[i].id];
-          const purchasePrice = data.recipients[j].purchasePrice;
-          const sellingPrice = data.suppliers[i].sellingPrice;
-
-          const costForThisRoute = quantity * (transportCost + purchasePrice);
-          const incomeForThisRoute = quantity * sellingPrice;
-
-          totalCost += costForThisRoute;
-          totalIncome += incomeForThisRoute;
-
-          console.log(
-            `Route S${i + 1}->R${j + 1}: qty=${quantity}, cost=${costForThisRoute}, income=${incomeForThisRoute}`,
-          );
-        }
-      }
-    }
-
-    const totalProfit = totalIncome - totalCost;
-
-    console.log("Final totals:", { totalCost, totalIncome, totalProfit });
+    const { totalCost, totalIncome, totalProfit } = calculateTotals(
+      solution,
+      suppliers,
+      recipients,
+      costs,
+    );
 
     return {
       solution,
       totalProfit,
       totalCost,
       totalIncome,
+      balancedSuppliers: suppliers,
+      balancedRecipients: recipients,
     };
   }, [data]);
 

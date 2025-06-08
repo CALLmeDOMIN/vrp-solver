@@ -35,22 +35,32 @@ export default function CapacitySupplyForm() {
       suppliers: suppliers.reduce(
         (acc, supplier) => {
           acc[supplier.id] = {
-            supply: supplier.supply,
-            sellingPrice: supplier.sellingPrice,
+            supply: supplier.supply === 0 ? undefined : supplier.supply,
+            sellingPrice:
+              supplier.sellingPrice === 0 ? undefined : supplier.sellingPrice,
           };
           return acc;
         },
-        {} as Record<string, { supply: number; sellingPrice: number }>,
+        {} as Record<
+          string,
+          { supply: number | undefined; sellingPrice: number | undefined }
+        >,
       ),
       recipients: recipients.reduce(
         (acc, recipient) => {
           acc[recipient.id] = {
-            demand: recipient.demand,
-            purchasePrice: recipient.purchasePrice,
+            demand: recipient.demand === 0 ? undefined : recipient.demand,
+            purchasePrice:
+              recipient.purchasePrice === 0
+                ? undefined
+                : recipient.purchasePrice,
           };
           return acc;
         },
-        {} as Record<string, { demand: number; purchasePrice: number }>,
+        {} as Record<
+          string,
+          { demand: number | undefined; purchasePrice: number | undefined }
+        >,
       ),
     },
   });
@@ -65,7 +75,6 @@ export default function CapacitySupplyForm() {
     });
 
     nextStep();
-    console.log("Form submitted with values:", values);
   };
 
   return (

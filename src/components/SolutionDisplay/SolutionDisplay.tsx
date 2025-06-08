@@ -10,15 +10,9 @@ import {
 } from "../ui/table";
 
 export default function SolutionDisplay() {
-  const { suppliers, recipients, solveMediatorProblem, prevStep, resetData } =
-    useDataContext();
-
-  console.log("SolutionDisplay - Suppliers:", suppliers);
-  console.log("SolutionDisplay - Recipients:", recipients);
+  const { solveMediatorProblem, prevStep, resetData } = useDataContext();
 
   const result = solveMediatorProblem();
-
-  console.log("SolutionDisplay - Result:", result);
 
   if (!result) {
     return (
@@ -33,7 +27,21 @@ export default function SolutionDisplay() {
     );
   }
 
-  const { solution, totalProfit, totalCost, totalIncome } = result;
+  const {
+    solution,
+    totalProfit,
+    totalCost,
+    totalIncome,
+    balancedSuppliers,
+    balancedRecipients,
+  } = result;
+
+  const fictionalSupplier = balancedSuppliers.find((s) =>
+    s.id.startsWith("fictional_"),
+  );
+  const fictionalRecipient = balancedRecipients.find((r) =>
+    r.id.startsWith("fictional_"),
+  );
 
   return (
     <div className="space-y-6">
@@ -45,36 +53,85 @@ export default function SolutionDisplay() {
           <TableHeader>
             <TableRow>
               <TableHead>Supplier/Recipient</TableHead>
-              {recipients.map((recipient) => (
+              {balancedRecipients.map((recipient) => (
                 <TableHead key={recipient.id} className="text-center">
-                  {recipient.name}
+                  <div className="flex flex-col">
+                    <span
+                      className={
+                        recipient.id.startsWith("fictional_")
+                          ? "text-gray-500 italic"
+                          : ""
+                      }
+                    >
+                      {recipient.name}
+                    </span>
+                  </div>
                 </TableHead>
               ))}
               <TableHead className="text-center">Supply</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {suppliers.map((supplier, i) => (
+            {balancedSuppliers.map((supplier, i) => (
               <TableRow key={supplier.id}>
-                <TableCell className="font-medium">{supplier.name}</TableCell>
-                {recipients.map((_, j) => (
+                <TableCell className="font-medium">
+                  <div className="flex flex-col">
+                    <span
+                      className={
+                        supplier.id.startsWith("fictional_")
+                          ? "text-gray-500 italic"
+                          : ""
+                      }
+                    >
+                      {supplier.name}
+                    </span>
+                  </div>
+                </TableCell>
+                {balancedRecipients.map((_, j) => (
                   <TableCell key={j} className="text-center">
-                    {solution[i][j] > 0 ? solution[i][j].toFixed(1) : "0"}
+                    <span
+                      className={
+                        balancedSuppliers[i].id.startsWith("fictional_") ||
+                        balancedRecipients[j].id.startsWith("fictional_")
+                          ? "text-gray-500 italic"
+                          : ""
+                      }
+                    >
+                      {solution[i] && solution[i][j] !== undefined
+                        ? solution[i][j].toFixed(1)
+                        : "0.0"}
+                    </span>
                   </TableCell>
                 ))}
                 <TableCell className="text-center font-medium">
-                  {supplier.supply}
+                  <span
+                    className={
+                      supplier.id.startsWith("fictional_")
+                        ? "text-gray-500 italic"
+                        : ""
+                    }
+                  >
+                    {supplier.supply}
+                  </span>
                 </TableCell>
               </TableRow>
             ))}
             <TableRow>
               <TableCell className="font-medium">Demand</TableCell>
-              {recipients.map((recipient) => (
+              {balancedRecipients.map((recipient) => (
                 <TableCell
                   key={recipient.id}
                   className="text-center font-medium"
                 >
-                  {recipient.demand}
+                  <span
+                    className={
+                      recipient.id.startsWith("fictional_")
+                        ? "text-gray-500 italic"
+                        : ""
+                    }
+                  >
+                    {recipient.demand}
+                  </span>
                 </TableCell>
               ))}
               <TableCell></TableCell>
@@ -83,11 +140,39 @@ export default function SolutionDisplay() {
         </Table>
       </div>
 
+      <div className="bg-muted/50 rounded-lg border p-4">
+        <h3 className="mb-2 font-semibold">Problem Balance Status</h3>
+        {fictionalSupplier && fictionalSupplier.supply > 0 ? (
+          <p className="text-sm text-gray-600">
+            <span className="font-medium text-orange-600">Unbalanced:</span>{" "}
+            Total demand exceeds supply by {fictionalSupplier.supply}. Added
+            fictional supplier <span className="italic">SF</span> to provide the
+            shortage.
+          </p>
+        ) : fictionalRecipient && fictionalRecipient.demand > 0 ? (
+          <p className="text-sm text-gray-600">
+            <span className="font-medium text-orange-600">Unbalanced:</span>{" "}
+            Total supply exceeds demand by {fictionalRecipient.demand}. Added
+            fictional recipient <span className="italic">RF</span> to absorb the
+            excess.
+          </p>
+        ) : (
+          <p className="text-sm text-gray-600">
+            <span className="font-medium text-green-600">Balanced:</span> Total
+            supply equals total demand. Fictional entities shown with zero
+            values.
+          </p>
+        )}
+      </div>
+
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded bg-blue-50 p-4 dark:bg-blue-950">
+        <div className="rounded bg-blue-50 p-4 dark:bg-red-950">
           <h3 className="font-semibold">Total Cost</h3>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
             ${totalCost.toFixed(2)}
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Transport + Purchase costs
           </p>
         </div>
         <div className="rounded bg-green-50 p-4 dark:bg-green-950">
@@ -95,12 +180,14 @@ export default function SolutionDisplay() {
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
             ${totalIncome.toFixed(2)}
           </p>
+          <p className="mt-1 text-xs text-gray-500">Revenue from recipients</p>
         </div>
-        <div className="rounded bg-purple-50 p-4 dark:bg-purple-950">
+        <div className="rounded bg-purple-50 p-4 dark:bg-blue-950">
           <h3 className="font-semibold">Total Profit</h3>
-          <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             ${totalProfit.toFixed(2)}
           </p>
+          <p className="mt-1 text-xs text-gray-500">Income - Costs</p>
         </div>
       </div>
 
